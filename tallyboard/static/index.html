@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="robots" content="noindex">
+<title>Tallyboard</title>
+<link rel="stylesheet" href="/console.css">
+</head>
+<body class="m-idle boot">
+<div id="wash"></div>
+<div id="edge"></div>
+
+<div id="idle">
+  <div id="drift">
+    <div id="idleClock">--:--</div>
+    <div id="idleDate">&nbsp;</div>
+    <div id="idleAgenda"></div>
+    <div id="idleLink"><i class="dot"></i><span id="idleLinkText">connecting</span></div>
+  </div>
+  <div id="idleWait"><div class="rh" data-t="s_turn">Your turn</div><div id="idleAwaiting"></div></div>
+</div>
+
+<div id="top">
+  <span id="brand">Tallyboard</span>
+  <span id="demoTag"></span>
+  <span id="topRight"><i class="dot" id="topDot"></i><span id="topLink"></span><span id="topClock"></span></span>
+</div>
+
+<div id="focus">
+  <div id="fTag"><i class="sig"></i><span id="fTagText"></span><span id="fDetail"></span></div>
+  <div id="scan"><i></i></div>
+  <div id="fAgent"></div>
+  <div id="fProject"></div>
+  <div id="fTitle"></div>
+  <div id="fReason"></div>
+  <div id="fRaw"></div>
+  <div id="fFoot">
+    <div id="fClock"><span id="fTime"></span><span id="fTimeLabel"></span></div>
+    <div id="fMeta"></div>
+  </div>
+</div>
+
+<div id="rail">
+  <table id="counts"><tr>
+    <td><b id="cActive">0</b><span data-t="s_active">active</span></td>
+    <td id="cWaitingCell"><b id="cWaiting">0</b><span data-t="s_waiting">waiting</span></td>
+  </tr><tr>
+    <td><b id="cDone">0</b><span data-t="s_done">done 24h</span></td>
+    <td><b id="cProjects">0</b><span data-t="s_projects">projects</span></td>
+  </tr></table>
+  <div class="rh" data-t="s_agents">Agents</div>
+  <div id="agents"></div>
+  <div class="rh" id="queueHead" data-t="s_queue">Also in progress</div>
+  <div id="queue"></div>
+  <div class="rh" id="awaitHead" data-t="s_turn">Your turn</div>
+  <div id="awaiting"></div>
+  <div class="rh" id="recentHead" data-t="s_recent">Recent</div>
+  <div id="recent"></div>
+</div>
+
+<div id="usage"></div>
+<div id="expire"><i id="expireBar"></i></div>
+<script src="/console.js"></script>
+</body>
+</html>

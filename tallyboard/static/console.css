@@ -1,0 +1,237 @@
+/* Tallyboard
+   Target: Fire OS 5 / Android 5.1 WebView. Deliberately no CSS variables, grid,
+   gap, clamp() or sticky; animations are opacity/transform only and prefixed. */
+
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+* { max-height: 999999px; }  /* switches off Android WebView font boosting */
+body {
+  background: #000; color: #e8ecf1;
+  -webkit-transition: background-color 1.2s ease; transition: background-color 1.2s ease;
+  font-family: Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%;
+  -webkit-user-select: none; user-select: none; cursor: none;
+  -webkit-font-feature-settings: "tnum"; font-feature-settings: "tnum";
+}
+i { font-style: normal; }
+.thin, #idleClock, #fTime, #counts b {
+  font-family: sans-serif-light, "Roboto Light", "Helvetica Neue", Roboto, Arial, sans-serif;
+  font-weight: 300;
+}
+.dot, .sig {
+  display: inline-block; width: 1.5vh; height: 1.5vh; border-radius: 50%;
+  vertical-align: middle; -webkit-box-sizing: border-box; box-sizing: border-box;
+}
+
+#wash, #edge, #idle { position: fixed; top: 0; left: 0; }
+#wash { width: 100%; height: 100%; opacity: 0; background: #fff; display: none; }
+#edge { width: 1.1vw; height: 100%; display: none; }
+
+/* ---------- IDLE: a dim clock and nothing else ---------- */
+#idle { width: 100%; height: 100%; display: none; }
+#drift {
+  position: absolute; left: 7vw; bottom: 9vh;
+  -webkit-transition: -webkit-transform 4s ease; transition: transform 4s ease;
+}
+#idleClock { font-size: 34vh; line-height: 1; letter-spacing: -0.02em; color: #d4d8de; }
+#idleDate { font-size: 4.2vh; margin-top: 1.5vh; color: #868d98; }
+#idleAgenda { margin-top: 3.4vh; font-size: 3.3vh; line-height: 4.6vh; color: #a1a8b2; max-width: 56vw; }
+#idleAgenda div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#idleAgenda b { font-weight: 500; color: #d4d8de; margin-right: 1.6vh; }
+#idleAgenda .soon b { color: #ffb020; }
+.night #idleAgenda { opacity: 0.5; }
+#idleLink { font-size: 2.5vh; margin-top: 4.5vh; color: #5b626c; letter-spacing: 0.08em; }
+#idleLink .dot { width: 1.1vh; height: 1.1vh; margin-right: 1.2vh; background: #24543f; }
+.night #idleClock { color: #7a818b; }
+.night #idleDate { color: #4d535c; }
+.lost #idleLink { color: #a36a1c; }
+.lost #idleLink .dot { background: #c98422; }
+.m-idle #idle { display: block; }
+
+/* "Sua vez": sessions whose turn ended and now wait for you. Quiet on purpose. */
+#idleWait { position: absolute; right: 3.5vw; top: 13vh; width: 28.5vw; display: none; }
+#idleWait .rh { border-top: 0; padding-top: 0; color: #3c424b; }
+#idleWait .rn { color: #858d98; }
+#idleWait .rd { color: #454c56; }
+#idleWait .rt { color: #5b636e; }
+.has-wait #idleWait { display: block; }
+.night #idleWait { opacity: 0.5; }
+.row.aw .dot { background: transparent; border: 0.35vh solid #c98a1e; }
+.m-blocked .row.aw .dot { border-color: #1c1303; }
+.tap { opacity: 0.4; }
+
+/* ---------- shared chrome for every non-idle state ---------- */
+#top, #focus, #rail, #expire { display: none; position: absolute; }
+#top {
+  top: 0; left: 5.5vw; right: 3vw; height: 10vh; line-height: 10vh;
+  font-size: 2.3vh; letter-spacing: 0.22em; text-transform: uppercase; color: #5b636e;
+}
+#topRight { float: right; }
+#topLink { margin: 0 2.2vh 0 1vh; }
+#topClock { font-size: 3.2vh; letter-spacing: 0.04em; color: #9aa3ae; }
+#topDot { width: 1.1vh; height: 1.1vh; background: #2f8f68; }
+#demoTag { margin-left: 2vh; padding: 0.4vh 1.2vh; border: 1px solid #5b636e; display: none; }
+.demo #demoTag { display: inline; }
+
+#focus { left: 5.5vw; top: 13vh; bottom: 6vh; width: 58vw; }
+#fTag { font-size: 2.9vh; letter-spacing: 0.26em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#fTag .sig { width: 2vh; height: 2vh; margin-right: 1.6vh; margin-top: -0.4vh; }
+#fDetail { margin-left: 2vh; letter-spacing: 0.08em; text-transform: none; color: #6f7883; }
+#scan { position: relative; height: 1px; margin-top: 2.6vh; overflow: hidden; background: #1b2026; visibility: hidden; }
+#scan i { position: absolute; left: 0; top: 0; width: 18%; height: 1px; background: #5cc8ff; }
+#fAgent {
+  font-size: 12vh; line-height: 1.05; margin-top: 3.4vh; font-weight: 500; letter-spacing: -0.02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#fProject { font-size: 5.4vh; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#fTitle {
+  font-size: 3.5vh; line-height: 4.6vh; max-height: 9.2vh; margin-top: 1.8vh; overflow: hidden; color: #98a1ac;
+}
+#fReason {
+  display: none; font-size: 4.3vh; line-height: 5.4vh; max-height: 16.2vh; margin-top: 2vh; overflow: hidden;
+}
+#fRaw {
+  display: none; font-size: 2.3vh; line-height: 3.1vh; max-height: 6.2vh; margin-top: 1.4vh; overflow: hidden;
+  font-family: "Droid Sans Mono", Menlo, monospace; color: #7d5a58; word-wrap: break-word;
+}
+#fFoot { position: absolute; left: 0; right: 0; bottom: 0; }
+#fTime { font-size: 18vh; line-height: 1; letter-spacing: -0.03em; }
+#fTimeLabel { font-size: 2.6vh; margin-left: 2vh; letter-spacing: 0.2em; text-transform: uppercase; color: #6f7883; }
+#fMeta { margin-top: 2.2vh; white-space: nowrap; overflow: hidden; }
+#fMeta .cell { display: inline-block; margin-right: 4.5vh; vertical-align: top; max-width: 26vw; }
+#fMeta .k { display: block; font-size: 2vh; letter-spacing: 0.2em; text-transform: uppercase; color: #5b636e; }
+#fMeta .v { display: block; font-size: 3.3vh; margin-top: 0.5vh; color: #c9d0d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+#rail {
+  right: 0; top: 13vh; bottom: 6vh; width: 28.5vw; padding: 0 2.8vw 0 2.6vw;
+  border-left: 1px solid #1b2026; overflow: hidden;
+}
+#counts { width: 100%; border-collapse: collapse; }
+#counts td { width: 50%; padding: 0 0 1.6vh; vertical-align: top; }
+#counts b { display: block; font-size: 6.2vh; line-height: 1; color: #c9d0d8; }
+#counts span { display: block; font-size: 1.9vh; margin-top: 0.6vh; letter-spacing: 0.16em; text-transform: uppercase; color: #5b636e; }
+#counts .on b { color: #ffb020; }
+.rh {
+  font-size: 1.9vh; letter-spacing: 0.24em; text-transform: uppercase; color: #454c56;
+  margin: 1.6vh 0 1vh; padding-top: 1.6vh; border-top: 1px solid #1b2026;
+}
+.ag, .row { position: relative; padding: 0.7vh 0 0.7vh 3.2vh; overflow: hidden; }
+.ag .dot, .row .dot { position: absolute; left: 0; top: 1.9vh; }
+.an, .rn { display: block; font-size: 3.5vh; line-height: 4.4vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.as, .rt { float: right; font-size: 2vh; line-height: 4.4vh; letter-spacing: 0.16em; text-transform: uppercase; margin-left: 1.5vh; }
+.rt { font-size: 2.6vh; letter-spacing: 0.02em; text-transform: none; color: #98a1ac; }
+.ad, .rd { font-size: 2.3vh; line-height: 3vh; color: #5b636e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .rn { font-size: 2.9vh; line-height: 4vh; }
+.row .rt { line-height: 4vh; }
+.row .dot { top: 1.6vh; }
+
+/* state signal colours (rail + roster) */
+.s-idle .dot { background: transparent; border: 1px solid #454c56; }
+.s-idle .an { color: #5b636e; }
+.s-idle .as { color: #454c56; }
+.s-running .dot { background: #5cc8ff; }  .s-running .as { color: #5cc8ff; }
+.s-blocked .dot { background: #ffb020; }  .s-blocked .as, .s-blocked .rt { color: #ffb020; }
+.s-done .dot, .s-interrupted .dot { background: #5fe3a1; }  .s-done .as { color: #5fe3a1; }
+.s-interrupted .dot { background: #6f7883; }
+.s-failed .dot { background: #ff5a52; }   .s-failed .as { color: #ff5a52; }
+
+#usage { position: fixed; left: 5.5vw; bottom: 1.7vh; height: 3.4vh; line-height: 3.4vh; font-size: 2.6vh; letter-spacing: 0.06em; color: #5b636e; white-space: nowrap; }
+#usage span { margin-right: 3.2vw; }
+#usage b { font-weight: 500; color: #9aa2ad; margin-left: 0.8vh; }
+#usage i { font-style: normal; margin-left: 1vh; color: #454c56; }
+#usage .hi b { color: #ffb020; }
+#usage .top b { color: #ff5a52; }
+.night #usage { opacity: 0.5; }
+.m-blocked #usage, .m-blocked #usage b, .m-blocked #usage i { color: #1c1303; }
+.m-blocked.k-input #usage, .m-blocked.k-input #usage b, .m-blocked.k-input #usage i { color: #150b33; }
+#expire { left: 0; right: 0; bottom: 0; height: 0.7vh; }
+#expireBar { display: block; width: 100%; height: 100%; -webkit-transform-origin: 0 50%; transform-origin: 0 50%; }
+
+.m-running #top, .m-blocked #top, .m-wait #top, .m-done #top, .m-failed #top,
+.m-running #focus, .m-blocked #focus, .m-wait #focus, .m-done #focus, .m-failed #focus,
+.m-running #rail, .m-blocked #rail, .m-wait #rail, .m-done #rail, .m-failed #rail,
+.m-running #edge, .m-wait #edge, .m-done #edge, .m-failed #edge { display: block; }
+
+/* ---------- RUNNING: calm, alive, cool ---------- */
+.m-running { background: #06080b; }
+.m-running #edge, .m-running #fTag .sig { background: #5cc8ff; }
+.m-running #fTag, .m-running #fProject { color: #5cc8ff; }
+.m-running #scan { visibility: visible; }
+.m-running #scan i { -webkit-animation: scan 3.2s linear infinite; animation: scan 3.2s linear infinite; }
+.m-running #edge { -webkit-animation: breathe 3.2s ease-in-out infinite alternate; animation: breathe 3.2s ease-in-out infinite alternate; }
+
+/* ---------- ACTION REQUIRED: the whole object turns amber ---------- */
+.m-blocked { background: #f2a122; color: #1c1303; }
+.m-blocked #wash { display: block; -webkit-animation: glow 2.6s ease-in-out infinite alternate; animation: glow 2.6s ease-in-out infinite alternate; }
+.m-blocked #top, .m-blocked #topClock, .m-blocked #fDetail, .m-blocked #fTimeLabel,
+.m-blocked #fMeta .k, .m-blocked #counts span, .m-blocked .rh, .m-blocked .ad, .m-blocked .rd { color: #6b4a0c; }
+.m-blocked #topDot, .m-blocked #fTag .sig { background: #1c1303; }
+.m-blocked #fTitle { color: #4a3307; max-height: 4.6vh; white-space: nowrap; text-overflow: ellipsis; }
+.m-blocked #fReason { display: block; font-weight: 500; }
+.m-blocked #fMeta .v, .m-blocked #counts b, .m-blocked .rt, .m-blocked #counts .on b { color: #1c1303; }
+.m-blocked #rail, .m-blocked .rh { border-color: #c98312; }
+.m-blocked .dot { background: transparent; border: 1px solid #1c1303; }
+.m-blocked .s-blocked .dot { background: #1c1303; }
+.m-blocked .as, .m-blocked .s-idle .an, .m-blocked .s-blocked .rt { color: #1c1303; }
+.m-blocked .s-idle .as { color: #6b4a0c; }
+
+/* ---------- ACTION REQUIRED, ambient: same amber signal, minutes later.
+   Dark again so it can sit in peripheral vision for an hour, but the wide
+   amber edge, amber type and slow pulse keep it unmistakably "waiting". */
+.m-wait { background: #140d02; }
+.m-wait #edge { width: 2.6vw; background: #f2a122; -webkit-animation: breathe 3.6s ease-in-out infinite alternate; animation: breathe 3.6s ease-in-out infinite alternate; }
+.m-wait #fTag .sig { background: #ffb020; }
+.m-wait #fTag, .m-wait #fProject, .m-wait #fTime { color: #ffb020; }
+.m-wait #fTitle { max-height: 4.6vh; white-space: nowrap; text-overflow: ellipsis; }
+.m-wait #fReason { display: block; font-weight: 500; color: #f3e3c4; }
+.m-wait #rail, .m-wait .rh { border-color: #33240a; }
+
+/* ---------- A QUESTION (not a permission): same urgency, violet instead of amber,
+   so one glance tells "answer something" from "approve something". */
+.s-blocked.q .dot { background: #b79cff; }  .s-blocked.q .as, .s-blocked.q .rt { color: #b79cff; }
+.m-blocked.k-input { background: #a98bff; color: #150b33; }
+.m-blocked.k-input #top, .m-blocked.k-input #topClock, .m-blocked.k-input #fDetail, .m-blocked.k-input #fTimeLabel,
+.m-blocked.k-input #fMeta .k, .m-blocked.k-input #counts span, .m-blocked.k-input .rh, .m-blocked.k-input .ad,
+.m-blocked.k-input .rd, .m-blocked.k-input .s-idle .as { color: #3f2c85; }
+.m-blocked.k-input #topDot, .m-blocked.k-input #fTag .sig, .m-blocked.k-input .s-blocked .dot { background: #150b33; }
+.m-blocked.k-input #fTitle { color: #2c1d66; }
+.m-blocked.k-input #fMeta .v, .m-blocked.k-input #counts b, .m-blocked.k-input .rt, .m-blocked.k-input #counts .on b,
+.m-blocked.k-input .as, .m-blocked.k-input .s-idle .an { color: #150b33; }
+.m-blocked.k-input #rail, .m-blocked.k-input .rh { border-color: #7d5fe0; }
+.m-blocked.k-input .dot, .m-blocked.k-input .row.aw .dot { border-color: #150b33; }
+.m-wait.k-input { background: #0b0718; }
+.m-wait.k-input #edge { background: #a98bff; }
+.m-wait.k-input #fTag .sig { background: #b79cff; }
+.m-wait.k-input #fTag, .m-wait.k-input #fProject, .m-wait.k-input #fTime { color: #b79cff; }
+.m-wait.k-input #fReason { color: #e3d9ff; }
+.m-wait.k-input #rail, .m-wait.k-input .rh { border-color: #231a44; }
+
+/* ---------- DONE: a quiet green exhale, then back to idle ---------- */
+.m-done { background: #050907; }
+.m-done #edge, .m-done #fTag .sig, .m-done #expireBar { background: #5fe3a1; }
+.m-done #fTag, .m-done #fProject { color: #5fe3a1; }
+.m-done #expire, .m-failed #expire { display: block; }
+
+/* ---------- FAILED: stopped, red, unmistakably not amber ---------- */
+.m-failed { background: #0c0506; }
+.m-failed #edge { width: 2.2vw; }
+.m-failed #edge, .m-failed #fTag .sig, .m-failed #expireBar { background: #ff5a52; }
+.m-failed #fTag, .m-failed #fProject { color: #ff5a52; }
+.m-failed #fReason { display: block; font-size: 4.6vh; line-height: 5.6vh; max-height: 11.2vh; font-weight: 500; color: #ffe1de; }
+.m-failed #fRaw { display: block; }
+.m-failed #fTitle { max-height: 4.6vh; white-space: nowrap; text-overflow: ellipsis; }
+.m-failed #fTime { font-size: 10vh; }
+.m-failed #expire { opacity: 0.5; }
+
+@-webkit-keyframes scan { from { -webkit-transform: translate3d(-100%, 0, 0); } to { -webkit-transform: translate3d(556%, 0, 0); } }
+@keyframes scan { from { transform: translate3d(-100%, 0, 0); } to { transform: translate3d(556%, 0, 0); } }
+@-webkit-keyframes breathe { from { opacity: 0.45; } to { opacity: 1; } }
+@keyframes breathe { from { opacity: 0.45; } to { opacity: 1; } }
+@-webkit-keyframes glow { from { opacity: 0; } to { opacity: 0.2; } }
+@keyframes glow { from { opacity: 0; } to { opacity: 0.2; } }
+
+/* Portrait is a fallback, not the designed orientation. */
+@media (orientation: portrait) {
+  #rail { display: none !important; }
+  #focus { width: 88vw; }
+  #idleClock { font-size: 24vw; }
+}
