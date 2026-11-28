@@ -73,7 +73,7 @@
     if (!arg && L.hasOwnProperty(key + '_')) key += '_';
     return L.hasOwnProperty(key) && typeof L[key] === 'string' ? fill(L[key], { a: arg }) : arg;
   }
-  var POLL_MS = 3000, BACKOFF_MS = [3000, 5000, 8000, 15000], LOST_MS = 12000, XHR_TIMEOUT_MS = 8000;
+  var POLL_MS = 3000, BACKOFF_MS = [3000, 5000, 8000, 15000], LOST_MS = 45000, XHR_TIMEOUT_MS = 15000;  /* a busy computer can take several seconds to answer: do not call that a lost link */
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 

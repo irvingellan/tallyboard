@@ -42,23 +42,33 @@ test('malformed payload never refreshes freshness; returns through one retry', (
   b.requests[2].respond(view({focus:null}));
   b.advance(5000);
   b.requests[3].respond(view({queue:[null]}));
-  b.advance(4000);
+  b.advance(8000);
+  assert.doesNotMatch(b.context.document.body.className,/lost/,'a few bad answers are not a lost link yet');
+  b.requests[4].respond(view({queue:[null]}));
+  b.advance(15000);
+  b.requests[5].respond(view({queue:[null]}));
+  b.advance(12000);
   assert.match(b.context.document.body.className,/lost/);
-  b.advance(4000);
-  b.requests[4].respond(view({rev:'2'}));
+  b.advance(3000);
+  b.requests[6].respond(view({rev:'2'}));
   assert.equal(b.context.document.body.className,'m-running');
   assert.equal(b.timers.size,1);
 });
 
 test('hung old WebView request aborts, goes offline, and recovers without manual reload', () => {
   const b=browser();
-  b.advance(10001);
+  b.advance(17001);
   assert.equal(b.requests.length,1);
   assert.equal(b.timers.size,1);
   b.advance(3000);
   assert.equal(b.requests.length,2);
+  assert.doesNotMatch(b.context.document.body.className,/lost/,'one slow answer is not a lost link');
+  b.advance(17001);
+  b.advance(5000);
+  assert.equal(b.requests.length,3);
+  b.advance(4000);
   assert.match(b.context.document.body.className,/lost/);
-  b.requests[1].respond(view());
+  b.requests[2].respond(view());
   assert.equal(b.context.document.body.className,'m-running');
 });
 

@@ -80,13 +80,14 @@ class Usage:
             return None
         return {'at': self.at, 'windows': self.windows}
 
-    def forever(self, interval=300):
+    def forever(self, interval=300, retry=30):
         while True:
+            fresh = False
             try:
-                self.refresh()
+                fresh = self.refresh()
             except Exception:  # the display must outlive any usage trouble
                 pass
-            time.sleep(interval)
+            time.sleep(interval if fresh else min(interval, retry))  # a failed read is retried soon, not in five minutes
 
     def start(self):
         threading.Thread(target=self.forever, name='plan-usage', daemon=True).start()
