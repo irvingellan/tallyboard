@@ -66,13 +66,21 @@ class Usage:
         if not self.cli:
             return False
         try:
-            done = self.run([self.cli] + list(COMMAND), capture_output=True, text=True, timeout=40)
-        except (OSError, subprocess.SubprocessError):
+            done = self.run([self.cli] + list(COMMAND), capture_output=True, text=True, timeout=120)
+        except (OSError, subprocess.SubprocessError) as error:
+            self._say('usage: %s' % type(error).__name__)
             return False
         windows = parse(done.stdout or '') if done.returncode == 0 else []
+        self._say('usage: ok' if windows else 'usage: exit %s, %d bytes, %s' % (
+            done.returncode, len(done.stdout or ''), ' '.join((getattr(done, 'stderr', None) or '').split())[:160]))
         if windows:
             self.windows, self.at = windows, self.clock()
         return bool(windows)
+
+    def _say(self, line):
+        if line != getattr(self, '_said', None):  # one log line per change, not per read
+            self._said = line
+            print(line, flush=True)
 
     def view(self):
         """What the tablet may show: nothing once the numbers are too old to trust."""

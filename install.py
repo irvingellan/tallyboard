@@ -107,7 +107,7 @@ def write_settings(path, data, original_exists):
 
 def service_plist(layout, python, port, touch=True):
     return {
-        'Label': layout.label, 'RunAtLoad': True, 'KeepAlive': True, 'ThrottleInterval': 3, 'ProcessType': 'Background',
+        'Label': layout.label, 'RunAtLoad': True, 'KeepAlive': True, 'ThrottleInterval': 3, 'ProcessType': 'Interactive',
         'ProgramArguments': [python, '-u', '-B', str(layout.app / 'server.py'), '--port', str(port),
                              '--state-dir', str(layout.state), '--allow-demo'] + (['--allow-focus'] if touch else []),
         'WorkingDirectory': str(layout.state),
